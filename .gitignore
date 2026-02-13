@@ -1,6 +1,45 @@
-venv/
+# =====================
+# Python
+# =====================
 __pycache__/
 *.pyc
-*.pt
-*.faiss
+*.pyo
+*.pyd
+*.log
+
+# Virtual environments
+venv/
+backend/venv/
 .env
+
+# =====================
+# Node / Frontend
+# =====================
+node_modules/
+dist/
+.vite/
+
+# =====================
+# OS / Editor
+# =====================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# =====================
+# Model cache (IMPORTANT)
+# =====================
+.cache/
+*.bin
+*.pt
+*.pth
+
+# =====================
+# Uploads / temp
+# =====================
+uploads/
+*.mp4
+*.avi
+*.mov
+*.mkv

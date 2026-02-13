@@ -1,74 +1,159 @@
-import numpy as np
-import cv2
 from PIL import Image
-import io
+import numpy as np
+from typing import Dict
+from io import BytesIO
 
-from app.models.image_model import cnn_fake_probability
+import torch
+from transformers import pipeline
 
-# --------------------------------------------------
-# IMAGE FORENSIC + CNN ENSEMBLE ANALYSIS
-# --------------------------------------------------
+# -----------------------------
+# Load neural AI-image detector
+# -----------------------------
 
-def analyze_image_file(file_bytes: bytes) -> dict:
-    """
-    Performs multi-signal image authenticity analysis:
-    1. Classical forensic analysis (texture, color statistics)
-    2. CNN-based probabilistic signal (EfficientNet)
-    """
+device = 0 if torch.cuda.is_available() else -1
 
-    # Load image
-    image = Image.open(io.BytesIO(file_bytes)).convert("RGB")
-    img = np.array(image)
+image_classifier = pipeline(
+    "image-classification",
+    model="dima806/deepfake_vs_real_image_detection",
+    device=device
+)
 
-    # Convert to grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+# -----------------------------
+# Forensic signals
+# -----------------------------
+
+def color_distribution_signal(img: Image.Image) -> float:
+    arr = np.array(img)
+    std = np.std(arr)
+    return min(std / 50, 1.0)
+
+
+def edge_consistency_signal(img: Image.Image) -> float:
+    gray = np.array(img.convert("L"))
+    edges = np.abs(np.diff(gray, axis=0)).mean()
+    return min(edges / 20, 1.0)
+
+
+def resolution_pattern_signal(img: Image.Image) -> float:
+    w, h = img.size
+    return 1.0 if (w % 64 == 0 and h % 64 == 0) else 0.0
+
+
+# -----------------------------
+# Main analysis (BYTES IN)
+# -----------------------------
+
+def analyze_image_file(image_bytes: bytes) -> Dict:
+    try:
+        img = Image.open(BytesIO(image_bytes)).convert("RGB")
+    except Exception:
+        return {
+            "verdict": "Error",
+            "ai_generated_probability": 0.0,
+            "signals": [],
+            "evidence": [
+                {
+                    "type": "concern",
+                    "description": "Invalid or corrupted image file",
+                    "source": "Image Loader"
+                }
+            ]
+        }
 
     # -----------------------------
-    # Forensic Signal 1: Texture
+    # Neural signal (PRIMARY)
     # -----------------------------
-    laplacian_variance = cv2.Laplacian(gray, cv2.CV_64F).var()
 
-    # -----------------------------
-    # Forensic Signal 2: Color Stats
-    # -----------------------------
-    r, g, b = cv2.split(img)
-    color_std = np.std([np.std(r), np.std(g), np.std(b)])
+    neural_result = image_classifier(img)
+    neural_score = 0.0
+    neural_label = "unknown"
 
-    forensic_score = 0.0
-    artifacts = []
-
-    if laplacian_variance < 80:
-        forensic_score += 0.4
-        artifacts.append("texture_smoothing")
-
-    if color_std < 15:
-        forensic_score += 0.3
-        artifacts.append("color_distribution_anomaly")
-
-    forensic_score = min(forensic_score, 1.0)
+    for r in neural_result:
+        if "fake" in r["label"].lower() or "ai" in r["label"].lower():
+            neural_score = r["score"]
+            neural_label = r["label"]
+            break
 
     # -----------------------------
-    # CNN Signal
+    # Forensic signals
     # -----------------------------
-    cnn_score = cnn_fake_probability(file_bytes)
 
-    # -----------------------------
-    # Final Ensemble Score
-    # -----------------------------
-    combined_score = round(min((forensic_score + cnn_score) / 2, 0.99), 2)
+    color_signal = color_distribution_signal(img)
+    edge_signal = edge_consistency_signal(img)
+    resolution_signal = resolution_pattern_signal(img)
 
-    verdict = (
-        "Likely AI-Generated or Manipulated"
-        if combined_score > 0.5
-        else "Likely Authentic"
+    forensic_score = (
+        color_signal * 0.4 +
+        edge_signal * 0.4 +
+        resolution_signal * 0.2
     )
+
+    # -----------------------------
+    # Final fusion score
+    # -----------------------------
+
+    final_ai_probability = round(
+        0.55 * neural_score +
+        0.45 * forensic_score,
+        2
+    )
+
+    # -----------------------------
+    # Verdict
+    # -----------------------------
+
+    if final_ai_probability >= 0.75:
+        verdict = "Likely AI-Generated or Manipulated"
+    elif final_ai_probability >= 0.45:
+        verdict = "Suspicious"
+    else:
+        verdict = "Likely Authentic"
+
+    # -----------------------------
+    # Evidence
+    # -----------------------------
+
+    evidence = []
+
+    evidence.append({
+        "type": "concern" if neural_score > 0.5 else "neutral",
+        "description": f"Neural classifier prediction: {neural_label}",
+        "source": "AI Image Classifier"
+    })
+
+    if color_signal > 0.6:
+        evidence.append({
+            "type": "concern",
+            "description": "Abnormal color variance detected",
+            "source": "Forensic Analyzer"
+        })
+
+    if edge_signal > 0.6:
+        evidence.append({
+            "type": "concern",
+            "description": "Edge patterns inconsistent with camera optics",
+            "source": "Edge Consistency Analyzer"
+        })
+
+    if resolution_signal:
+        evidence.append({
+            "type": "concern",
+            "description": "Resolution matches common AI generation grids",
+            "source": "Resolution Pattern Detector"
+        })
 
     return {
         "verdict": verdict,
-        "ai_generated_probability": combined_score,
-        "detected_artifacts": artifacts,
+        "ai_generated_probability": final_ai_probability,
         "model_signals": {
-            "forensic_score": round(forensic_score, 2),
-            "cnn_score": cnn_score
-        }
+            "neural_score": round(neural_score, 2),
+            "forensic_score": round(forensic_score, 2)
+        },
+        "signals": [
+            {"signal": "neural_classifier", "strength": neural_score},
+            {"signal": "color_distribution", "strength": color_signal},
+            {"signal": "edge_consistency", "strength": edge_signal},
+            {"signal": "resolution_pattern", "strength": resolution_signal},
+        ],
+        "evidence": evidence,
     }

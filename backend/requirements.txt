@@ -1,9 +1,19 @@
+fastapi
+uvicorn
+pydantic
+
+# ML / NLP
 torch
 torchvision
 transformers
-streamlit
 sentence-transformers
 faiss-cpu
-pillow
-opencv-python
 numpy
+
+# Image / Video
+opencv-python-headless
+pillow
+python-multipart
+
+# Utilities
+moviepy

@@ -1,7 +1,7 @@
-const API_BASE = "http://localhost:8000/analyze";
+const API_BASE_URL = "http://127.0.0.1:8000/analyze";
 
 export async function analyzeText(text: string) {
-  const response = await fetch(`${API_BASE}/text`, {
+  const response = await fetch(`${API_BASE_URL}/text`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -20,7 +20,7 @@ export async function analyzeImage(file: File) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_BASE}/image`, {
+  const response = await fetch(`${API_BASE_URL}/image`, {
     method: "POST",
     body: formData,
   });
@@ -36,7 +36,7 @@ export async function analyzeVideo(file: File) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_BASE}/video`, {
+  const response = await fetch(`${API_BASE_URL}/video`, {
     method: "POST",
     body: formData,
   });

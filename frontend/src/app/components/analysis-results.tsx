@@ -4,8 +4,8 @@ import {
   ExternalLink,
   Clock,
   Cpu,
-} from 'lucide-react';
-import type { AnalysisResult } from '../App';
+} from "lucide-react";
+import type { AnalysisResult } from "../App";
 
 interface AnalysisResultsProps {
   result: AnalysisResult | null;
@@ -16,32 +16,32 @@ interface AnalysisResultsProps {
    Verdict formatting helper
    ========================= */
 function formatVerdict(verdict: string, confidence: number) {
-  if (verdict === 'authentic') {
+  if (verdict === "authentic") {
     return {
-      title: 'Content appears authentic',
+      title: "Content appears authentic",
       subtitle:
         confidence >= 85
-          ? 'High confidence based on multiple independent verification signals'
-          : 'Moderate confidence — some verification signals present',
-      color: 'text-green-700',
+          ? "High confidence based on multiple independent verification signals"
+          : "Moderate confidence — some verification signals present",
+      color: "text-green-700",
     };
   }
 
-  if (verdict === 'manipulated') {
+  if (verdict === "manipulated") {
     return {
-      title: 'High risk of AI-generated or manipulated content',
+      title: "High risk of AI-generated or manipulated content",
       subtitle:
         confidence >= 80
-          ? 'Strong AI-generation and forensic indicators detected'
-          : 'Some manipulation indicators detected',
-      color: 'text-red-700',
+          ? "Strong AI-generation and forensic indicators detected"
+          : "Some manipulation indicators detected",
+      color: "text-red-700",
     };
   }
 
   return {
-    title: 'Content may be misleading or unverified',
-    subtitle: 'Insufficient evidence to fully verify authenticity',
-    color: 'text-amber-700',
+    title: "Content may be misleading or unverified",
+    subtitle: "Insufficient evidence to fully verify authenticity",
+    color: "text-amber-700",
   };
 }
 
@@ -51,24 +51,24 @@ function formatVerdict(verdict: string, confidence: number) {
 function confidenceLabel(confidence: number) {
   if (confidence >= 85) {
     return {
-      label: 'High Confidence',
-      description: 'Strong agreement across multiple AI models',
-      color: 'text-green-700',
+      label: "High Confidence",
+      description: "Strong agreement across multiple AI models",
+      color: "text-green-700",
     };
   }
 
   if (confidence >= 65) {
     return {
-      label: 'Moderate Confidence',
-      description: 'Some uncertainty — partial verification signals',
-      color: 'text-amber-700',
+      label: "Moderate Confidence",
+      description: "Some uncertainty — partial verification signals",
+      color: "text-amber-700",
     };
   }
 
   return {
-    label: 'Low Confidence',
-    description: 'Limited evidence or conflicting indicators',
-    color: 'text-red-700',
+    label: "Low Confidence",
+    description: "Limited evidence or conflicting indicators",
+    color: "text-red-700",
   };
 }
 
@@ -76,16 +76,17 @@ function confidenceLabel(confidence: number) {
    Why-this-result explainer
    ========================= */
 function explainResult(result: AnalysisResult) {
-  const concerns = result.evidence.filter(e => e.type === 'concern').length;
-  const supports = result.evidence.filter(e => e.type === 'support').length;
+  const evidence = result.evidence ?? [];
+  const concerns = evidence.filter(e => e.type === "concern").length;
+  const supports = evidence.filter(e => e.type === "support").length;
 
-  if (result.verdict === 'manipulated') {
+  if (result.verdict === "manipulated") {
     return `This content was flagged as high risk because multiple AI models detected
     forensic or semantic inconsistencies. ${concerns} risk indicators outweighed
     supporting signals, suggesting possible manipulation or AI generation.`;
   }
 
-  if (result.verdict === 'authentic') {
+  if (result.verdict === "authentic") {
     return `This content appears authentic based on consistent signals across
     verification models. ${supports} supporting indicators were detected with
     minimal conflicting evidence.`;
@@ -97,6 +98,9 @@ function explainResult(result: AnalysisResult) {
 }
 
 export function AnalysisResults({ result, isAnalyzing }: AnalysisResultsProps) {
+  /* =========================
+     Loading state
+     ========================= */
   if (isAnalyzing) {
     return (
       <div className="flex flex-col h-full">
@@ -122,6 +126,9 @@ export function AnalysisResults({ result, isAnalyzing }: AnalysisResultsProps) {
     );
   }
 
+  /* =========================
+     Empty state
+     ========================= */
   if (!result) {
     return (
       <div className="flex flex-col h-full">
@@ -145,6 +152,9 @@ export function AnalysisResults({ result, isAnalyzing }: AnalysisResultsProps) {
     );
   }
 
+  /* =========================
+     Safe derived values
+     ========================= */
   const verdictUI = formatVerdict(result.verdict, result.confidence);
   const confidenceUI = confidenceLabel(result.confidence);
   const explanation = explainResult(result);
@@ -156,14 +166,16 @@ export function AnalysisResults({ result, isAnalyzing }: AnalysisResultsProps) {
           <h2 className="text-lg font-semibold text-gray-900">
             Analysis Results
           </h2>
+
           <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
             <span className="flex items-center gap-1">
               <Clock className="size-3" />
-              {result.analyzedAt.toLocaleTimeString()}
+              {new Date(result.analyzedAt).toLocaleTimeString()}
             </span>
+
             <span className="flex items-center gap-1">
               <Cpu className="size-3" />
-              {result.processingTime}ms
+              {result.processingTime ?? 0}ms
             </span>
           </div>
         </div>
@@ -218,21 +230,23 @@ export function AnalysisResults({ result, isAnalyzing }: AnalysisResultsProps) {
             <h4 className="text-sm font-semibold text-gray-900 mb-3">
               Supporting Evidence
             </h4>
+
             <div className="space-y-2">
-              {result.evidence.map((item, index) => (
+              {(result.evidence ?? []).map((item, index) => (
                 <div
                   key={index}
                   className="flex gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg"
                 >
                   <div
                     className={`size-2 rounded-full mt-2 ${
-                      item.type === 'support'
-                        ? 'bg-green-500'
-                        : item.type === 'concern'
-                        ? 'bg-red-500'
-                        : 'bg-gray-400'
+                      item.type === "support"
+                        ? "bg-green-500"
+                        : item.type === "concern"
+                        ? "bg-red-500"
+                        : "bg-gray-400"
                     }`}
                   />
+
                   <div>
                     <p className="text-sm text-gray-700">
                       {item.description}
@@ -254,7 +268,7 @@ export function AnalysisResults({ result, isAnalyzing }: AnalysisResultsProps) {
               This analysis uses advanced AI models across language,
               vision, and forensic domains. Results are probabilistic
               and should be verified through trusted sources before
-              action.
+              taking action.
             </p>
           </div>
         </div>

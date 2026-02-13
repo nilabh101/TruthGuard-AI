@@ -1,45 +1,23 @@
-# =====================
 # Python
-# =====================
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.log
-
-# Virtual environments
 venv/
-backend/venv/
 .env
 
-# =====================
-# Node / Frontend
-# =====================
+# Node
 node_modules/
 dist/
-.vite/
+build/
 
-# =====================
-# OS / Editor
-# =====================
+# OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+
+# Editor
 .vscode/
 .idea/
-
-# =====================
-# Model cache (IMPORTANT)
-# =====================
-.cache/
-*.bin
-*.pt
-*.pth
-
-# =====================
-# Uploads / temp
-# =====================
-uploads/
-*.mp4
-*.avi
-*.mov
-*.mkv
